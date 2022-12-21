@@ -38,12 +38,6 @@ node {
           }
     } catch(error) {
         currentBuild.result = "FAILURE"
-        String recipient = "${env.NOTIFICATION_EMAIL}"
-        mail subject: "${env.JOB_NAME} (${env.BUILD_NUMBER}) failed",
-               body: "Build ${env.BUILD_URL} failed, Error is " + error ,
-                 to: recipient,
-            replyTo: recipient,
-               from: 'yuvraj.singh@qardio.com'
     } finally {
          stage('Cleanup') {
               echo 'cleanup is running'
