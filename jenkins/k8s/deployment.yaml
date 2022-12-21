@@ -17,6 +17,6 @@ spec:
     spec:
       containers:
       - name: nodejs
-        image: 041027301676.dkr.ecr.us-east-1.amazonaws.com/oregon/qa-test:latest
+        image: 041027301676.dkr.ecr.us-east-1.amazonaws.com/oregon/qa-test:{CONTAINER_VERSION}
         ports:
         - containerPort: 80
