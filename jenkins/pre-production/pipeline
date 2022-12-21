@@ -1,0 +1,55 @@
+node {
+   try {
+          stage('Preparation') {
+               slackSend channel: "#${params.channel}", color: 'good' ,message: "Build started for ${env.JOB_NAME} ${env.BUILD_NUMBER}"
+               git url: 'git@github.com:yuvrajsingh1607/oregon-qa-test.git',
+               branch: "${params.branch}"
+               shortCommit = sh(returnStdout: true, script: "git log -n 1 --pretty=format:'%h'").trim()
+               newVersion =  "${new Date().format('yyyyMMddhhmm')}" + "-$shortCommit"      	
+          }
+          stage('Publish') {
+               sh "eval \$(aws ecr get-login --registry-ids ${AMAZON_ECR_ID} --region ${AWS_ECR_REGION} --no-include-email)"
+               sh "docker build -f jenkins/docker/app/Dockerfile -t oregon/qa-test:${newVersion} --build-arg BUILD_FOR=${params.build_for} ."
+               sh "docker tag oregon/qa-test:${newVersion} ${AMAZON_ECR_ID}.dkr.ecr.us-east-1.amazonaws.com/oregon/qa-test:${newVersion}"
+               sh "docker push 041027301676.dkr.ecr.us-east-1.amazonaws.com/oregon/qa-test:${newVersion}"
+          }
+          commitMessage = sh(returnStdout: true, script: "git log --pretty=format:'%s' -n 1").trim()
+          if(commitMessage.contains('update package version') && params.build_for != 'automation'){
+               println "Skipping build. Last commit ${commitMessage}"
+               slackSend channel: "#${params.channel}", color: 'good' ,message: "Skipping build for ${env.JOB_NAME} ${env.BUILD_NUMBER}. Last commit ${commitMessage}"
+          }
+          else {
+               stage('Version'){
+                    if(params.branch == "development" && params.build_for != 'automation'){
+                         sh "npm --no-git-tag-version version ${params.versionType}"
+                         sh "git add -f package.json"
+                         sh "git commit -m 'update package version'"
+                         sh "git push origin ${params.branch}"
+                    }
+               }
+               stage('Tag') {
+                    sh "git tag ${newVersion}"
+                    sh "git push origin ${newVersion}"
+               }
+               stage('Deploy') {
+                    build job: triggerJobName, wait: false, parameters: [[$class: 'StringParameterValue', name: 'image_id', value: "${newVersion}"],
+                    [$class: 'StringParameterValue', name: 'branch', value: "${params.branch}"],
+                    [$class: 'StringParameterValue', name: 'namespace', value: "${params.namespace}"]]
+                    slackSend channel: "#${params.channel}", color: 'good' , message: "Build completed for ${env.JOB_NAME} ${env.BUILD_NUMBER}"
+               }
+          }
+    } catch(error) {
+        currentBuild.result = "FAILURE"
+        String recipient = "${env.NOTIFICATION_EMAIL}"
+        mail subject: "${env.JOB_NAME} (${env.BUILD_NUMBER}) failed",
+               body: "Build ${env.BUILD_URL} failed, Error is " + error ,
+                 to: recipient,
+            replyTo: recipient,
+               from: 'yuvraj.singh@qardio.com'
+        slackSend channel: "#${params.channel}", color: 'danger' , message: "@here Build failed for ${env.JOB_NAME} ${env.BUILD_NUMBER}"
+    } finally {
+         stage('Cleanup') {
+              echo 'cleanup is running'
+         }
+    }
+}
