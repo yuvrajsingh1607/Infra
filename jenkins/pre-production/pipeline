@@ -1,7 +1,6 @@
 node {
    try {
           stage('Preparation') {
-               slackSend channel: "#${params.channel}", color: 'good' ,message: "Build started for ${env.JOB_NAME} ${env.BUILD_NUMBER}"
                git url: 'git@github.com:yuvrajsingh1607/oregon-qa-test.git',
                branch: "${params.branch}"
                shortCommit = sh(returnStdout: true, script: "git log -n 1 --pretty=format:'%h'").trim()
@@ -16,7 +15,7 @@ node {
           commitMessage = sh(returnStdout: true, script: "git log --pretty=format:'%s' -n 1").trim()
           if(commitMessage.contains('update package version') && params.build_for != 'automation'){
                println "Skipping build. Last commit ${commitMessage}"
-               slackSend channel: "#${params.channel}", color: 'good' ,message: "Skipping build for ${env.JOB_NAME} ${env.BUILD_NUMBER}. Last commit ${commitMessage}"
+             
           }
           else {
                stage('Version'){
@@ -35,7 +34,6 @@ node {
                     build job: triggerJobName, wait: false, parameters: [[$class: 'StringParameterValue', name: 'image_id', value: "${newVersion}"],
                     [$class: 'StringParameterValue', name: 'branch', value: "${params.branch}"],
                     [$class: 'StringParameterValue', name: 'namespace', value: "${params.namespace}"]]
-                    slackSend channel: "#${params.channel}", color: 'good' , message: "Build completed for ${env.JOB_NAME} ${env.BUILD_NUMBER}"
                }
           }
     } catch(error) {
@@ -46,7 +44,6 @@ node {
                  to: recipient,
             replyTo: recipient,
                from: 'yuvraj.singh@qardio.com'
-        slackSend channel: "#${params.channel}", color: 'danger' , message: "@here Build failed for ${env.JOB_NAME} ${env.BUILD_NUMBER}"
     } finally {
          stage('Cleanup') {
               echo 'cleanup is running'
