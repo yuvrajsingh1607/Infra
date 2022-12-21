@@ -5,19 +5,11 @@ node {
     	    	branch: "${params.branch}"
   	 }
      stage('Deployment') {
-        withKubeConfig([credentialsId: "k8s-config-${DEPLOYMENT_ENVIRONMENT}"]) {
-         	def deploymentName= "nodejs-deployment"
-    		sh "kubectl apply -f jenkins/k8s/service.yaml -n ${namespace}"
-    		def deploymentFile = readYaml file: "jenkins/k8s/deployment.yaml"
-    		def imageVersion = deploymentFile.spec.template.spec.containers[0].image .replace("{CONTAINER_VERSION}","${image_id}")
-            deploymentFile.spec.template.spec.containers[0].image = "${imageVersion}"
-            deploymentFile.spec.replicas = "${replicaCount}".toInteger()
-            sh "rm jenkins/k8s/deployment.yaml"
-            writeYaml file: "jenkins/k8s/deployment.yaml", data: deploymentFile
-            sh "kubectl apply -f jenkins/k8s/deployment.yaml -n ${namespace}"
-            sh "kubectl rollout status deploy ${deploymentName} -n ${namespace}"
+    		sh "/var/lib/jenkins/bin/kubectl apply -f jenkins/k8s/service.yaml -n ${namespace}"
+            sh "/var/lib/jenkins/bin/kubectl apply -f jenkins/k8s/deployment.yaml -n ${namespace}"
+            sh "/var/lib/jenkins/bin/kubectl rollout status deploy ${deploymentName} -n ${namespace}"
     		echo "Deployment completed for  ${deploymentName}"
-		}
+
   	 }
 	} catch(error) {
         currentBuild.result = "FAILURE"
