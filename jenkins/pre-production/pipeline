@@ -7,9 +7,9 @@ node {
                newVersion =  "${new Date().format('yyyyMMddhhmm')}" + "-$shortCommit"      	
           }
           stage('Publish') {
-               sh "eval \$(aws ecr get-login --registry-ids ${AMAZON_ECR_ID} --region ${AWS_ECR_REGION} --no-include-email)"
+               sh "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 041027301676.dkr.ecr.us-east-1.amazonaws.com"
                sh "docker build -f jenkins/docker/app/Dockerfile -t oregon/qa-test:${newVersion} --build-arg BUILD_FOR=${params.build_for} ."
-               sh "docker tag oregon/qa-test:${newVersion} ${AMAZON_ECR_ID}.dkr.ecr.us-east-1.amazonaws.com/oregon/qa-test:${newVersion}"
+               sh "docker tag oregon/qa-test:${newVersion} 041027301676.dkr.ecr.us-east-1.amazonaws.com/oregon/qa-test:${newVersion}"
                sh "docker push 041027301676.dkr.ecr.us-east-1.amazonaws.com/oregon/qa-test:${newVersion}"
           }
           commitMessage = sh(returnStdout: true, script: "git log --pretty=format:'%s' -n 1").trim()
