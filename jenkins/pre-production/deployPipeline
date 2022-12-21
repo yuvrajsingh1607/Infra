@@ -1,7 +1,6 @@
 node {
    try {
    	stage('Preparation') {
-   	    slackSend channel: "#${params.channel}", color: 'good', message: "Build started for ${env.JOB_NAME} ${env.BUILD_NUMBER}"
    	 	git url: 'git@github.com:yuvrajsingh1607/oregon-qa-test.git',
     	    	branch: "${params.branch}"
   	 }
@@ -18,18 +17,10 @@ node {
             sh "kubectl apply -f jenkins/k8s/deployment.yaml -n ${namespace}"
             sh "kubectl rollout status deploy ${deploymentName} -n ${namespace}"
     		echo "Deployment completed for  ${deploymentName}"
-    		slackSend channel: "#${params.channel}", color: 'good', message: "Build completed for ${env.JOB_NAME} ${env.BUILD_NUMBER}"
 		}
   	 }
 	} catch(error) {
         currentBuild.result = "FAILURE"
-        String recipient = "${env.NOTIFICATION_EMAIL}"
-        mail subject: "${env.JOB_NAME} (${env.BUILD_NUMBER}) failed",
-               body: "Build ${env.BUILD_URL} failed, Error is " + error ,
-                 to: recipient,
-            replyTo: recipient,
-               from: 'yuvraj.singh@qardio.com'
-        slackSend channel: "#${params.channel}", color: 'danger', message: "Build failed for ${env.JOB_NAME} ${env.BUILD_NUMBER}"
     }
 }
 
