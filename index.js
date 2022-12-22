@@ -3,11 +3,11 @@ const express = require("express");
 const mysql = require("mysql");
 const db = mysql.createConnection({
 
-  host: "test-database-1.cofitj4tb68a.us-west-2.rds.amazonaws.com",
+  host: "<DB hostname>",
 
-  user: "admin",
+  user: "<user>",
 
-  password: "D3u1EuopSt9mrIUa53XX",
+  password: "<password>",
 
   database: "nodejs",
 
