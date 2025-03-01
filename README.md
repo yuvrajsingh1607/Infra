@@ -1,1 +1,1 @@
-oregon-qa-test
+Terraform
